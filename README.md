@@ -23,12 +23,10 @@ This repo documents the journey.
 
 ## Team
 
-| Name | Role |
-|------|------|
-| Saad Baig | — |
-| Rich Compton | DDoS Village organizer |
-| David Nichols | — |
-| Ethan Paige | — |
+- [Saad Baig](https://github.com/SaadBaig)
+- [Rich Compton](https://github.com/racompton)
+- [David Nichols](https://github.com/youngsyre26)
+- [Ethan Paige](https://github.com/thragusjr)
 
 ## Infrastructure
 
@@ -36,8 +34,8 @@ This repo documents the journey.
 
 | Component | Specs |
 |-----------|-------|
-| **HPE ProLiant DL360 Gen9** (1RU blade) | 2× E5-2620 v3 (6c/12t each), 60 GB RAM, Proxmox on RAID-1 580 GB OS disk, 2.2 TB logical array (5 drives) |
-| **Cisco WS-C3750X-48** | 48-port managed switch |
+| **HPE ProLiant DL360 Gen9** (1RU blade) | • 2× Intel Xeon E5-2620 v3 (6c/12t each) <br> • 160 GB RAM <br> • Proxmox on RAID-1 580 GB OS disk <br> • 2.2 TB logical array (5 drives) |
+| **Cisco WS-C3750X-48** | • 48-port managed switch |
 
 ## Background
 
