@@ -11,6 +11,9 @@ This repo documents the journey :)
 - Rich Compton
 - David Nichols
 - Ethan Paige
+- Cloudflare 
+- Netscout 
+- Reddit
 
 ## Beginnings
 
@@ -20,5 +23,3 @@ So we started braingstorming what we should do that encompasses DDoS. Because Co
 
 We decided to buy some cheap temu WiFi repeaters and hack into them since that was how KimWolf was leveraging its DDoS power. 
 
-
-So
