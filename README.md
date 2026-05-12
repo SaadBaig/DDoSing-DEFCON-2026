@@ -1,61 +1,54 @@
 # DDoSing DEFCON 2026
 
-Me and a team of hackers are heading to DEFCON 34 in 2026 and setting up in the DDoS village. We are creating a contest using hacked temu repeaters to create a DDoSing botnet that offense DDoSers can use to take down our targets. 
+A team of hackers setting up in the DDoS Village at DEFCON 34 (2026). We're building a contest around hacked Temu WiFi repeaters — turning them into a DDoS botnet that offensive players can use to take down our targets.
 
-This repo documents the journey :) 
-
-
-
-## The Team
-- Saad Baig 
-- Rich Compton
-- David Nichols
-- Ethan Paige
-
-
-
-
-## Infrastructure
-_A special thanks to our friends at Reddit, Cloudflare and Netscout for giving us the infrastructure we needed for this project_
-
-
-HPE ProLiant DL360 Gen9 1RU Blade Server 
-- 2× E5-2620 v3 = 6 core 12 thread 1
-- 60GB Ram 
-- Proxmox is installed on Raid1 580GB OS Disk
-- 2.2TB Logical Array (5 drives total)
-
-Cisco WS-C3750X-48 48 port switch
-
-
-
-## Beginnings
-
-It started with me introducing David and Ethan to Rich Compton. Compton runs the DDoS Village at DEFCON and he asked us if we wanted to help us with his community. 
-
-So we started braingstorming what we should do that encompasses DDoS. Because Compton has been working on the Kimwolf botnet at Comcast, he is well versed in DDoS campaigns. 
-
-We decided to buy some cheap temu WiFi repeaters and hack into them since that was one the many devices that KimWolf leverages for its powerful DDoS Attacks
-
-So we had 10 of them shipped to our door and we started hacking away. 
-
-We present to you the Zbtlink ZBT-WE1526 WiFi Repeater Exploitation Toolkit: https://github.com/thragusjr/busyboxin
-
-
-# Srepeater — Zbtlink ZBT-WE1526 WiFi Repeater Exploitation Toolkit
+This repo documents the journey.
 
 ## Table of Contents
 
-- [Device Overview](#device-overview)
-- [Hardware Analysis](#hardware-analysis)
-- [Network & Services](#network--services)
-- [Firewall Configuration](#firewall-configuration)
-- [Security Findings](#security-findings)
-- [Access Methods](#access-methods)
-  - [Telnetd Method](#telnetd-method)
-  - [SSH Method](#ssh-method)
-- [Enumeration Tools](#enumeration-tools)
-- [Project Structure](#project-structure)
+- [Team](#team)
+- [Infrastructure](#infrastructure)
+- [Background](#background)
+- [Srepeater — Zbtlink ZBT-WE1526 WiFi Repeater Exploitation Toolkit](#srepeater--zbtlink-zbt-we1526-wifi-repeater-exploitation-toolkit)
+  - [Device Overview](#device-overview)
+  - [Hardware Analysis](#hardware-analysis)
+  - [Network & Services](#network--services)
+  - [Firewall Configuration](#firewall-configuration)
+  - [Security Observations](#security-observations)
+  - [Access Methods](#access-methods)
+  - [Enumeration Tools](#enumeration-tools)
+  - [Project Structure](#project-structure)
+
+---
+
+## Team
+
+| Name | Role |
+|------|------|
+| Saad Baig | — |
+| Rich Compton | DDoS Village organizer |
+| David Nichols | — |
+| Ethan Paige | — |
+
+## Infrastructure
+
+> Thanks to our friends at Reddit, Cloudflare, and Netscout for providing the infrastructure for this project.
+
+| Component | Specs |
+|-----------|-------|
+| **HPE ProLiant DL360 Gen9** (1RU blade) | 2× E5-2620 v3 (6c/12t each), 60 GB RAM, Proxmox on RAID-1 580 GB OS disk, 2.2 TB logical array (5 drives) |
+| **Cisco WS-C3750X-48** | 48-port managed switch |
+
+## Background
+
+Rich Compton runs the DDoS Village at DEFCON. After introductions, we started brainstorming what to build around DDoS. Compton works on the [KimWolf botnet](https://en.wikipedia.org/wiki/Mirai_(malware)) at Comcast and is well versed in DDoS campaigns — KimWolf leverages cheap consumer IoT devices like WiFi repeaters for its attacks.
+
+We bought 10 Temu WiFi repeaters (Zbtlink ZBT-WE1526) and started hacking away.
+
+The result: **[Zbtlink ZBT-WE1526 WiFi Repeater Exploitation Toolkit](https://github.com/thragusjr/busyboxin)**
+
+
+# Srepeater — Zbtlink ZBT-WE1526 WiFi Repeater Exploitation Toolkit
 
 ---
 
