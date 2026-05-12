@@ -16,8 +16,9 @@ This repo documents the journey :)
 
 It started with me introducing David and Ethan to Rich Compton. Compton runs the DDoS Village at DEFCON and he asked us if we wanted to help us with his community. 
 
-So we started braingstorming what we should do that encompasses DDoS. Because Compton has been working on the Kimwolf botnet at Comcast, he was well versed in DDoS campaigns. 
+So we started braingstorming what we should do that encompasses DDoS. Because Compton has been working on the Kimwolf botnet at Comcast, he is well versed in DDoS campaigns. 
 
 We decided to buy some cheap temu WiFi repeaters and hack into them since that was how KimWolf was leveraging its DDoS power. 
 
 
+So
