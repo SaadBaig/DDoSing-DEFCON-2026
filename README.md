@@ -13,13 +13,12 @@ This repo documents the journey :)
 - Ethan Paige
 
 
-_A special thanks to our sponsors for giving us the infrastructure we needed for this project_
-- Cloudflare 
-- Netscout 
-- Reddit
 
 
 ## Infrastructure
+_A special thanks to our friends at Reddit, Cloudflare and Netscout for giving us the infrastructure we needed for this project_
+
+
 HPE ProLiant DL360 Gen9 1RU Blade Server 
 - 2× E5-2620 v3 = 6 core 12 thread 1
 - 60GB Ram 
@@ -29,11 +28,334 @@ HPE ProLiant DL360 Gen9 1RU Blade Server
 Cisco WS-C3750X-48 48 port switch
 
 
+
 ## Beginnings
 
 It started with me introducing David and Ethan to Rich Compton. Compton runs the DDoS Village at DEFCON and he asked us if we wanted to help us with his community. 
 
 So we started braingstorming what we should do that encompasses DDoS. Because Compton has been working on the Kimwolf botnet at Comcast, he is well versed in DDoS campaigns. 
 
-We decided to buy some cheap temu WiFi repeaters and hack into them since that was how KimWolf was leveraging its DDoS power. 
+We decided to buy some cheap temu WiFi repeaters and hack into them since that was one the many devices that KimWolf leverages for its powerful DDoS Attacks
 
+So we had 10 of them shipped to our door and we started hacking away. 
+
+We present to you the Zbtlink ZBT-WE1526 WiFi Repeater Exploitation Toolkit: https://github.com/thragusjr/busyboxin
+
+
+# Srepeater — Zbtlink ZBT-WE1526 WiFi Repeater Exploitation Toolkit
+
+## Table of Contents
+
+- [Device Overview](#device-overview)
+- [Hardware Analysis](#hardware-analysis)
+- [Network & Services](#network--services)
+- [Firewall Configuration](#firewall-configuration)
+- [Security Findings](#security-findings)
+- [Access Methods](#access-methods)
+  - [Telnetd Method](#telnetd-method)
+  - [SSH Method](#ssh-method)
+- [Enumeration Tools](#enumeration-tools)
+- [Project Structure](#project-structure)
+
+---
+
+## Device Overview
+
+| Property | Value |
+|----------|-------|
+| **Device** | Zbtlink ZBT-WE1526 WiFi Repeater |
+| **Hostname** | Srepeater |
+| **SoC** | Qualcomm Atheros QCA9533 ver 1 rev 1 |
+| **CPU** | MIPS 24Kc V7.4 (single-core, ~366 BogoMIPS) |
+| **Architecture** | MIPS (`mips_24kc`) |
+| **RAM** | 59 MB (60,384 kB) |
+| **Flash** | ~19 MB across 7 MTD partitions |
+| **WiFi** | Integrated 802.11n via Atheros ath9k driver |
+| **Ethernet** | 2 ports (eth0, eth1) |
+| **Firmware** | LEDE Reboot 17.01-SNAPSHOT (OpenWrt-derived) |
+| **Kernel** | Linux 4.4.194 (built Apr 18, 2024 by `luotao@wisewish`) |
+| **Shell** | `/bin/ash` (BusyBox) |
+| **Default IP** | `192.168.11.1` |
+
+Despite being marketed as a WiFi repeater, these devices run a full OpenWrt/LEDE Linux environment with routing, NAT, firewall (iptables), DHCP/DNS, and the ability to host arbitrary services. They can be reconfigured into router, AP, bridge, or client mode.
+
+---
+
+## Hardware Analysis
+
+<img src="images/closeup-of-board.jpeg" alt="Closeup of the ZBT-WE1526 board" width="435">
+
+### CPU & SoC
+The QCA9533 is a cost-effective Qualcomm Atheros system-on-chip designed for embedded networking. It includes an integrated 802.11n radio, meaning WiFi is built into the chip rather than a separate PCIe/USB adapter.
+
+- **ISA**: mips1, mips2, mips32r1, mips32r2
+- **ASEs**: mips16
+- **TLB Entries**: 16
+- **Hardware Watchpoints**: 4
+
+### Memory
+```
+Total:     59 MB
+Used:      23.4 MB (39.7%)
+Free:      35.5 MB (60.3%)
+Available: 29 MB
+Swap:      None
+```
+
+### Flash Storage (MTD Partitions)
+
+| Device | Size | Purpose |
+|--------|------|---------|
+| mtdblock0 | 256 KB | Bootloader |
+| mtdblock1 | 64 KB | U-Boot environment |
+| mtdblock2 | 6,336 KB | Root filesystem (SquashFS, read-only) |
+| mtdblock3 | 3,328 KB | Overlay (JFFS2, writable — 9% used) |
+| mtdblock4 | 1,472 KB | Unknown |
+| mtdblock5 | 64 KB | Configuration |
+| mtdblock6 | 7,744 KB | Unknown |
+
+The root filesystem is a read-only SquashFS image overlaid with a writable JFFS2 partition. Changes persist in `/overlay/upper/`.
+
+### Wireless Hardware
+- **Driver**: `ath9k` (Dual BSD/GPL)
+- **Key Modules**: `ath9k` (95 KB), `ath9k_hw` (338 KB), `mac80211` (417 KB), `cfg80211` (234 KB)
+- **Interface**: `wlan0` — MAC `00:16:78:30:3A:EC`
+
+### WPA Supplicant Configuration
+
+The file `/etc/wpa_supplicant-mywps1.conf` configures the device's client-side WiFi (i.e., the upstream network the repeater connects to):
+
+```
+ctrl_interface=/var/run/wpa_supplicant-mywps1
+
+network={
+    scan_ssid=1
+    ssid=""
+    key_mgmt=NONE
+}
+```
+
+**Key observations:**
+- **`key_mgmt=NONE`** — The repeater is configured to connect to **open (unencrypted) networks only**. No WPA/WPA2/WPA3 authentication is used for the upstream connection.
+- **`ssid=""`** — Empty SSID indicates either an unconfigured template or a wildcard state. In some `wpa_supplicant` implementations, an empty SSID with `scan_ssid=1` can cause the device to associate with any available open network.
+- **`scan_ssid=1`** — Actively probes for hidden SSIDs. This means the device sends probe requests that are visible to any wireless monitor, revealing that it's searching for a network.
+- **`mywps1` in filename** — The naming convention suggests WPS (WiFi Protected Setup) functionality was intended, but the actual config contains no WPS parameters and no security whatsoever.
+- **`ctrl_interface`** — The control socket at `/var/run/wpa_supplicant-mywps1` allows any local process to reconfigure the wireless client via `wpa_cli`.
+
+**Security implications:**
+1. **Rogue AP attack**: An attacker can set up an open AP with any SSID and the repeater may connect to it, routing all client traffic through the attacker (man-in-the-middle).
+2. **Traffic interception**: Since `key_mgmt=NONE`, all traffic between the repeater and the upstream AP is unencrypted over the air — trivially sniffable with a monitor-mode adapter.
+3. **Probe request leakage**: `scan_ssid=1` causes the device to actively broadcast probe requests, allowing passive wireless reconnaissance to detect and fingerprint the device.
+4. **Local control socket exposure**: Any process running on the device can use the `ctrl_interface` socket to change the wireless configuration at runtime without authentication.
+
+### Network Interfaces
+- **br-lan**: Bridge containing eth0 + eth1 + wlan0 — IP `192.168.11.1/24`
+- **eth0**: WAN-side Ethernet (MAC `00:16:78:30:3A:EE`)
+- **eth1**: LAN-side Ethernet (MAC `00:16:78:30:3A:ED`)
+- **wlan0**: WiFi radio (MAC `00:16:78:30:3A:EC`)
+
+---
+
+## Network & Services
+
+### Listening Services
+
+| Port | Protocol | Service | PID/Process |
+|------|----------|---------|-------------|
+| 22 | TCP | SSH | `dropbear` |
+| 23 | TCP | Telnet | `telnetd` |
+| 25000 | TCP | Web Admin | `uhttpd` |
+| 53 | TCP/UDP | DNS | `dnsmasq` |
+| 67 | UDP | DHCP | `dnsmasq` |
+| 80 | TCP | HTTP | `lighttpd` |
+| 81 | TCP | Custom | `commuos` |
+| 547 | UDP | DHCPv6 | `odhcpd` |
+
+### Init Scripts (`/etc/init.d/`)
+Key services: `boot`, `commuos`, `cron`, `dnsmasq`, `dropbear`, `firewall`, `gpio_switch`, `led`, `ledcontrol`, `lighttpd`, `log`, `masterCtrl`, `network`, `odhcpd`, `rpcd`, `sysctl`, `sysntpd`, `system`, `telnet`, `uhttpd`
+
+---
+
+## Firewall Configuration
+
+The device uses OpenWrt's `fw3` firewall framework with iptables. Key rules from the [`iptables.txt`](enumeration/outputs/iptables.txt) dump:
+
+### NAT Table
+- WAN postrouting uses `MASQUERADE` for NAT
+- LAN and WAN have separate prerouting/postrouting user chains
+
+### Filter Table
+- **Default policies**: INPUT ACCEPT, FORWARD DROP, OUTPUT ACCEPT
+- **SYN flood protection**: Rate-limited to 25/sec with burst of 50
+- **LAN zone**: Full ACCEPT for input, output, and forwarding
+- **WAN zone**: Default REJECT for input and forwarding; allows DHCP (port 68), ICMP ping, IGMP, IPSec (ESP + ISAKMP port 500), and DNAT port forwards
+- **Connection tracking**: RELATED,ESTABLISHED connections are accepted globally
+
+### Notable Firewall Characteristics
+- LAN zone is fully open — any device on the LAN has unrestricted access
+- WAN zone rejects unsolicited inbound by default
+- SYN flood protection exists but is relatively permissive (25/sec)
+- No rate limiting on established connections
+
+---
+
+## Security Observations
+
+- **`/etc/shadow` is world-writable** (`-rw-rw-rw-`) — any process can modify password hashes
+- **Shadow file readable** by all users, exposing the root hash
+- **Command injection** in `protocol.csp` `time` parameter — allows arbitrary command execution via crafted HTTP requests (this is the exploit vector used by both access methods)
+- **Unauthenticated file upload** at `/cgi-bin/upload.cgi` — files land in `/tmp/tmpFW`
+- Telnet enabled (port 23) — cleartext protocol
+- Only shell available is `/bin/ash`
+
+---
+
+## Access Methods
+
+Both methods exploit the same two vulnerabilities in the device's web interface:
+
+1. **Unauthenticated file upload** via `/cgi-bin/upload.cgi` (uploaded files go to `/tmp/tmpFW`)
+2. **Command injection** via `protocol.csp`'s `time` parameter, which passes unsanitized input to a system shell
+
+### Telnetd Method
+
+**Location**: [`pwn_telnetd/`](pwn_telnetd/)
+
+This method opens a reverse shell via `telnetd` on port 4444, then connects with `netcat`. This gives a raw ash shell with no authentication.
+
+#### Files
+- [`pwn_telnetd/script.sh`](pwn_telnetd/script.sh) — Main exploit launcher (run from your machine)
+- [`pwn_telnetd/payload.sh`](pwn_telnetd/payload.sh) — Payload uploaded to device (starts telnetd listener)
+
+#### How It Works
+
+1. Cleans old SSH records for `192.168.11.1` from `known_hosts`
+2. Uploads [`pwn_telnetd/payload.sh`](pwn_telnetd/payload.sh) to the device via the upload CGI endpoint
+3. Uses command injection to `chmod +x` the uploaded script
+4. Uses command injection again to execute the script
+5. The script starts `telnetd` listening on port 4444 with `/bin/ash`
+6. Connects via `netcat` to catch the shell
+
+#### Usage
+
+```bash
+cd pwn_telnetd
+
+# Edit pwn_telnetd/script.sh and set your username
+# user=yourusername
+
+chmod +x pwn_telnetd/script.sh
+./pwn_telnetd/script.sh
+```
+
+#### What Happens on the Device
+
+[`pwn_telnetd/payload.sh`](pwn_telnetd/payload.sh) runs:
+```sh
+/usr/sbin/telnetd -l /bin/ash -p 4444
+```
+
+This binds a telnet daemon on port 4444 serving `/bin/ash` with no authentication.
+
+---
+
+### SSH Method
+
+**Location**: [`pwn_ssh/`](pwn_ssh/)
+
+This method replaces the root password hash in `/etc/shadow` with a known hash, then connects via SSH. This provides a persistent, encrypted, authenticated shell.
+
+#### Files
+- [`pwn_ssh/script.sh`](pwn_ssh/script.sh) — Main exploit launcher (run from your machine)
+- [`pwn_ssh/payload.sh`](pwn_ssh/payload.sh) — Payload uploaded to device (replaces password hash)
+
+#### How It Works
+
+1. Cleans old SSH records for `192.168.11.1` from `known_hosts`
+2. Uploads [`pwn_ssh/payload.sh`](pwn_ssh/payload.sh) to the device via the upload CGI endpoint
+3. Uses command injection to `chmod +x /tmp/tmpFW`, redirecting stdout to `/webs/hehe`
+4. Uses command injection again to execute `/tmp/tmpFW`, redirecting stdout to `/webs/hehe`
+5. Curls `http://192.168.11.1/webs/hehe` — the response body will contain the modified `/etc/shadow` contents, confirming the script ran and the hash was replaced
+6. Connects via SSH as root using the known password
+
+#### Usage
+
+```bash
+cd pwn_ssh
+
+# Edit pwn_ssh/script.sh and set your username
+# user=yourusername
+
+chmod +x pwn_ssh/script.sh
+./pwn_ssh/script.sh
+```
+
+#### What Happens on the Device
+
+[`pwn_ssh/payload.sh`](pwn_ssh/payload.sh) does two things:
+
+1. **Replaces the root hash** — Uses `awk` to find the root line in `/etc/shadow` and substitute it with the known hash
+2. **Logs output** — Appends the modified shadow file to `/webs/hehe`
+
+#### What Happens on the local machine
+
+[`pwn_ssh/script.sh`](pwn_ssh/script.sh) cats `/webs/hehe` via command injection for verification
+
+---
+
+## Enumeration Tools
+
+### Scripts
+
+| Script | Description |
+|--------|-------------|
+| [`enumeration/scripts/linenum.sh`](enumeration/scripts/linenum.sh) | LinEnum — general Linux privilege escalation enumeration |
+| [`enumeration/scripts/hwnum.sh`](enumeration/scripts/hwnum.sh) | Custom hardware enumeration script (CPU, memory, storage, network, modules, etc.) |
+
+### Running Enumeration
+
+After gaining access via either method:
+
+```bash
+# Upload and run linenum
+scp enumeration/scripts/linenum.sh root@192.168.11.1:/tmp/
+ssh root@192.168.11.1 'chmod +x /tmp/linenum.sh && /tmp/linenum.sh -t'
+
+# Upload and run hardware enumeration
+scp enumeration/scripts/hwnum.sh root@192.168.11.1:/tmp/
+ssh root@192.168.11.1 'chmod +x /tmp/hwnum.sh && /tmp/hwnum.sh -t'
+```
+
+### Output Files
+
+| File | Description |
+|------|-------------|
+| [`enumeration/outputs/linenum_results.txt`](enumeration/outputs/linenum_results.txt) | Full LinEnum output — system, users, networking, services, interesting files |
+| [`enumeration/outputs/raw_hwenum_results.txt`](enumeration/outputs/raw_hwenum_results.txt) | Full hardware enumeration output — CPU, memory, storage, network, kernel modules |
+| [`enumeration/outputs/hardware_summary.md`](enumeration/outputs/hardware_summary.md) | Curated hardware summary in markdown |
+| [`enumeration/outputs/iptables.txt`](enumeration/outputs/iptables.txt) | Complete iptables rule dump (nat, mangle, filter tables) |
+
+---
+
+## Project Structure
+
+```
+repeater/
+├── README.md                                   # This file
+├── contest_ideas.md                            # DefCon 2026 DDoS contest challenge ideas
+├── pwn_telnetd/                                # Telnetd access method (telnet/netcat)
+│   ├── script.sh                               #   Exploit launcher
+│   └── payload.sh                              #   Payload (telnetd listener on port 4444)
+├── pwn_ssh/                                    # SSH access method
+│   ├── script.sh                               #   Exploit launcher
+│   └── payload.sh                              #   Payload (shadow hash replacement)
+└── enumeration/                                # Device enumeration
+    ├── scripts/                                #   Enumeration scripts
+    │   ├── linenum.sh                          #     LinEnum (general Linux enumeration)
+    │   └── hwnum.sh                            #     Custom hardware enumeration
+    └── outputs/                                #   Enumeration results
+        ├── linenum_results.txt                 #     LinEnum output
+        ├── raw_hwenum_results.txt              #     Hardware enumeration output
+        ├── hardware_summary.md                 #     Curated hardware summary
+        └── iptables.txt                        #     iptables rule dump
+```
