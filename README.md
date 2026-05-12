@@ -41,7 +41,7 @@ This repo documents the journey.
 
 ## Background
 
-Rich Compton runs the DDoS Village at DEFCON. After introductions, we started brainstorming what to build around DDoS. Compton works on the [KimWolf botnet](https://en.wikipedia.org/wiki/Mirai_(malware)) at Comcast and is well versed in DDoS campaigns — KimWolf leverages cheap consumer IoT devices like WiFi repeaters for its attacks.
+Rich Compton runs the DDoS Community at DEFCON. After introductions, we started brainstorming what to build around DDoS. Compton works on the [KimWolf botnet](https://en.wikipedia.org/wiki/Mirai_(malware)) at Comcast and is well versed in DDoS campaigns — KimWolf leverages cheap consumer IoT devices like WiFi repeaters for its attacks.
 
 We bought 10 Temu WiFi repeaters (Zbtlink ZBT-WE1526) and started hacking away.
 
