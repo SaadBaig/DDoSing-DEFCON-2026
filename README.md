@@ -1,6 +1,6 @@
 # DDoSing DEFCON 2026
 
-<img src="images/logo.jpeg" width="435">
+<img src="images/Logo.jpeg" width="435">
 
 A team of hackers setting up in the DDoS Village at DEFCON 34 (2026). We're building a contest around hacked Temu WiFi repeaters — turning them into a DDoS botnet that offensive players can use to take down our targets.
 
