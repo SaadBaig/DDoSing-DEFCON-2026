@@ -34,7 +34,7 @@ This repo documents the journey.
 
 ## Infrastructure
 
-> Thanks to our friends at Reddit, Cloudflare, and Netscout for providing the infrastructure for this project.
+> Thanks to our friends at Reddit, Cloudflare, Hak5 and Netscout for providing the infrastructure and prizes for this project.
 
 | Component | Specs |
 |-----------|-------|
