@@ -1,12 +1,21 @@
 # DDoSing DEFCON 2026
 
 <p align="center">
-  <img src="images/Logo.jpeg" alt="..." width="435">
+  <img src="images/logo.jpg" alt="..." width="435">
+  <br>
+  <em></em>
 </p>
 
 A team of hackers setting up in the DDoS Village at DEFCON 34 (2026). We're building a contest around hacked Temu WiFi repeaters — turning them into a DDoS botnet that offensive players can use to take down our targets.
 
 This repo documents the journey.
+
+<p align="center">
+  <img src="images/shirt.jpg" alt="..." width="435">
+  <br>
+ <i>Check out the shirt we made for the con :) </i>
+</p>
+
 
 ## Table of Contents
 
@@ -354,3 +363,7 @@ repeater/
         ├── hardware_summary.md                 #     Curated hardware summary
         └── iptables.txt                        #     iptables rule dump
 ```
+
+
+
+
